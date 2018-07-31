@@ -1,96 +1,190 @@
 'use strict'
 const path = require('path')
 const utils = require('./utils')
+const webpack = require('webpack')
 const config = require('../config')
-const vueLoaderConfig = require('./vue-loader.conf')
+const paths = require('../config/paths');
+const merge = require('webpack-merge')
+const baseWebpackConfig = require('./webpack.base.conf')
+const CopyWebpackPlugin = require('copy-webpack-plugin')
+const HtmlWebpackPlugin = require('html-webpack-plugin')
+const ExtractTextPlugin = require('extract-text-webpack-plugin')
+const OptimizeCSSPlugin = require('optimize-css-assets-webpack-plugin')
+const UglifyJsPlugin = require('uglifyjs-webpack-plugin')
+const OfflinePlugin = require('offline-plugin')
 
-function resolve (dir) {
-  return path.join(__dirname, '..', dir)
+const env = process.env.NODE_ENV === 'testing'
+	? require('../config/test.env')
+	: require('../config/prod.env');
+
+// Webpack uses `publicPath` to determine where the app is being served from.
+// It requires a trailing slash, or the file assets will get an incorrect path.
+const publicPath = paths.servedPath
+
+const webpackConfig = merge(baseWebpackConfig, {
+	mode: "production",
+	module: {
+		rules: utils.styleLoaders({
+			sourceMap: config.build.productionSourceMap,
+			extract: true,
+			usePostCSS: true
+		})
+	},
+	devtool: config.build.productionSourceMap ? config.build.devtool : false,
+	output: {
+		path: config.build.assetsRoot,
+		filename: utils.assetsPath('js/[name].[chunkhash].js'),
+		chunkFilename: utils.assetsPath('js/[id].[chunkhash].js'),
+		publicPath: publicPath,
+	},
+	optimization: {
+		splitChunks: {
+			cacheGroups: {
+				manifest: {
+					name: "manifest",
+					minChunks: Infinity,
+				},
+				app: {
+					name: "app",
+					minChunks: 3,
+				}
+			}
+		}
+	},
+	plugins: [
+		// http://vuejs.github.io/vue-loader/en/workflow/production.html
+		new webpack.DefinePlugin({
+			'process.env': env
+		}),
+		new UglifyJsPlugin({
+			uglifyOptions: {
+				compress: {
+					warnings: false
+				}
+			},
+			sourceMap: config.build.productionSourceMap,
+			parallel: true
+		}),
+		// extract css into its own file
+		new ExtractTextPlugin({
+			filename: utils.assetsPath('css/[name].[md5:contenthash:hex:20].css'),
+			// Setting the following option to `false` will not extract CSS from codesplit chunks.
+			// Their CSS will instead be inserted dynamically with style-loader when the codesplit chunk has been loaded by webpack.
+			// It's currently set to `true` because we are seeing that sourcemaps are included in the codesplit bundle as well when it's `false`, 
+			// increasing file size: https://github.com/vuejs-templates/webpack/issues/1110
+			allChunks: true,
+		}),
+		// Compress extracted CSS. We are using this plugin so that possible
+		// duplicated CSS from different components can be deduped.
+		new OptimizeCSSPlugin({
+			cssProcessorOptions: config.build.productionSourceMap
+				? { safe: true, map: { inline: false } }
+				: { safe: true }
+		}),
+		// generate dist index.html with correct asset hash for caching.
+		// you can customize output by editing /index.html
+		// see https://github.com/ampedandwired/html-webpack-plugin
+		new HtmlWebpackPlugin({
+			filename: process.env.NODE_ENV === 'testing'
+				? 'index.html'
+				: config.build.index,
+			template: paths.appHtml,
+			inject: true,
+			minify: {
+				removeComments: true,
+				collapseWhitespace: true,
+				removeRedundantAttributes: true,
+				useShortDoctype: true,
+				removeEmptyAttributes: true,
+				removeStyleLinkTypeAttributes: true,
+				keepClosingSlash: true,
+				minifyJS: true,
+				minifyCSS: true,
+				minifyURLs: true
+				// more options:
+				// https://github.com/kangax/html-minifier#options-quick-reference
+			},
+			// necessary to consistently work with multiple chunks via CommonsChunkPlugin
+			chunksSortMode: 'dependency'
+		}),
+		// keep module.id stable when vendor modules does not change
+		new webpack.HashedModuleIdsPlugin(),
+		// enable scope hoisting
+		new webpack.optimize.ModuleConcatenationPlugin(),
+
+		// copy custom static assets
+		new CopyWebpackPlugin([
+			{
+				from: path.resolve(__dirname, '../static'),
+				to: config.build.assetsSubDirectory,
+				ignore: ['.*']
+			}
+		])
+	]
+})
+
+if (process.env.TARGET !== 'electron-renderer')
+{
+	webpackConfig.plugins = webpackConfig.plugins.concat([
+		new OfflinePlugin({
+			safeToUseOptionalCaches: true,
+			AppCache: false,
+			caches: {
+				main: [
+					'/',
+					':rest:'
+				],
+				additional: [
+					':externals:'
+				]
+			},
+
+			externals: [
+				'/'
+			],
+
+			ServiceWorker: {
+				events: true,
+				navigateFallbackURL: '/',
+				publicPath: '/sw.js'
+			},
+
+			rewrites(asset)
+			{
+				if (/^index\.(html)$/.test(asset))
+				{
+					return '/'
+				}
+
+				return asset
+			}
+		})
+	])
 }
 
-{{#lint}}const createLintingRule = () => ({
-  test: /\.(js|vue)$/,
-  loader: 'eslint-loader',
-  enforce: 'pre',
-  include: [resolve('src'), resolve('test')],
-  options: {
-    formatter: require('eslint-friendly-formatter'),
-    emitWarning: !config.dev.showEslintErrorsInOverlay
-  }
-}){{/lint}}
+if (config.build.productionGzip)
+{
+	const CompressionWebpackPlugin = require('compression-webpack-plugin')
 
-module.exports = {
-  context: path.resolve(__dirname, '../'),
-  entry: {
-    app: './src/main.js'
-  },
-  output: {
-    path: config.build.assetsRoot,
-    filename: '[name].js',
-    publicPath: process.env.NODE_ENV === 'production'
-      ? config.build.assetsPublicPath
-      : config.dev.assetsPublicPath
-  },
-  resolve: {
-    extensions: ['.js', '.vue', '.json'],
-    alias: {
-      {{#if_eq build "standalone"}}
-      'vue$': 'vue/dist/vue.esm.js',
-      {{/if_eq}}
-      '@': resolve('src'),
-    }
-  },
-  module: {
-    rules: [
-      {{#lint}}
-      ...(config.dev.useEslint ? [createLintingRule()] : []),
-      {{/lint}}
-      {
-        test: /\.vue$/,
-        loader: 'vue-loader',
-        options: vueLoaderConfig
-      },
-      {
-        test: /\.js$/,
-        loader: 'babel-loader',
-        include: [resolve('src'), resolve('test'), resolve('node_modules/webpack-dev-server/client')]
-      },
-      {
-        test: /\.(png|jpe?g|gif|svg)(\?.*)?$/,
-        loader: 'url-loader',
-        options: {
-          limit: 10000,
-          name: utils.assetsPath('img/[name].[hash:7].[ext]')
-        }
-      },
-      {
-        test: /\.(mp4|webm|ogg|mp3|wav|flac|aac)(\?.*)?$/,
-        loader: 'url-loader',
-        options: {
-          limit: 10000,
-          name: utils.assetsPath('media/[name].[hash:7].[ext]')
-        }
-      },
-      {
-        test: /\.(woff2?|eot|ttf|otf)(\?.*)?$/,
-        loader: 'url-loader',
-        options: {
-          limit: 10000,
-          name: utils.assetsPath('fonts/[name].[hash:7].[ext]')
-        }
-      }
-    ]
-  },
-  node: {
-    // prevent webpack from injecting useless setImmediate polyfill because Vue
-    // source contains it (although only uses it if it's native).
-    setImmediate: false,
-    // prevent webpack from injecting mocks to Node native modules
-    // that does not make sense for the client
-    dgram: 'empty',
-    fs: 'empty',
-    net: 'empty',
-    tls: 'empty',
-    child_process: 'empty'
-  }
+	webpackConfig.plugins.push(
+		new CompressionWebpackPlugin({
+			asset: '[path].gz[query]',
+			algorithm: 'gzip',
+			test: new RegExp(
+				'\\.(' +
+				config.build.productionGzipExtensions.join('|') +
+				')$'
+			),
+			threshold: 10240,
+			minRatio: 0.8
+		})
+	)
 }
+
+if (config.build.bundleAnalyzerReport)
+{
+	const BundleAnalyzerPlugin = require('webpack-bundle-analyzer').BundleAnalyzerPlugin
+	webpackConfig.plugins.push(new BundleAnalyzerPlugin())
+}
+
+module.exports = webpackConfig
