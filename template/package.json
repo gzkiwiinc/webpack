@@ -29,6 +29,7 @@
     "vue-router": "^3.0.1"{{/router}}
   },
   "devDependencies": {
+    "mesh-dev-cli": "^1.0.0",
     {{#lint}}
     "babel-eslint": "^7.2.3",
     "eslint": "^4.15.0",
