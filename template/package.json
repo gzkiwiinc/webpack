@@ -31,6 +31,7 @@
   "devDependencies": {
 	"mesh-dev-cli": "^1.0.0",
     "offline-plugin": "^5.0.5",
+    "tapable": "1.0.0-beta5",
     {{#lint}}
     "babel-eslint": "^7.2.3",
     "eslint": "^4.15.0",
