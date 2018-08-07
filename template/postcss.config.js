@@ -20,6 +20,7 @@ const cssNextOption = process.env.BROWSER_FALLBACK
 module.exports = {
 	plugins: [
 		// require('postcss-import')(),
+		require('postcss-custom-properties')(),
 		require('precss'),
 		require('autoprefixer'),
 		require("postcss-cssnext")(),
