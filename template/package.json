@@ -10,7 +10,6 @@
     "build": "mesh build webview",
     "build:prod": "mesh build -p",
     "deploy": "mesh deploy webview",
-    "deploy:prod": "mesh deploy webview -p",
     {{#if_eq runner "jest"}}
     "unit": "jest --config test/unit/jest.conf.js --coverage",
     {{/if_eq}}
@@ -26,6 +25,7 @@
     {{#lint}}
     "lint": "eslint --ext .js,.vue src{{#unit}} test/unit{{/unit}}{{#e2e}} test/e2e/specs{{/e2e}}",
     {{/lint}}
+    "deploy:prod": "mesh deploy webview -p"
   },
   "dependencies": {
     "axios": "^0.18.0",
