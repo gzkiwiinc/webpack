@@ -5,8 +5,12 @@
   "author": "{{ author }}",
   "private": true,
   "scripts": {
-    "dev": "webpack-dev-server --inline --progress --config build/webpack.dev.conf.js",
+    "dev": "webpack-dev-server --inline --progress --config ./node_modules/mesh-dev-cli/src/commands/buildConfig/webpack.dev.conf.js",
     "start": "npm run dev",
+    "build": "mesh build webview",
+    "build:prod": "mesh build -p",
+    "deploy": "mesh deploy webview",
+    "deploy:prod": "mesh deploy webview -p",
     {{#if_eq runner "jest"}}
     "unit": "jest --config test/unit/jest.conf.js --coverage",
     {{/if_eq}}
@@ -22,9 +26,11 @@
     {{#lint}}
     "lint": "eslint --ext .js,.vue src{{#unit}} test/unit{{/unit}}{{#e2e}} test/e2e/specs{{/e2e}}",
     {{/lint}}
-    "build": "node build/build.js"
   },
   "dependencies": {
+    "axios": "^0.18.0",
+    "blueimp-load-image": "^2.19.0",
+    "cropperjs": "^1.4.1",
     "vue": "^2.5.2"{{#router}},
     "vue-i18n": "^8.0.0",
     "vue-property-decorator": "^7.0.0",
@@ -101,7 +107,7 @@
     "chalk": "^2.0.1",
     "copy-webpack-plugin": "^4.0.1",
     "css-loader": "^0.28.0",
-    "extract-text-webpack-plugin": "next",
+    "extract-text-webpack-plugin": "4.0.0-beta.0",
     "file-loader": "^1.1.4",
     "friendly-errors-webpack-plugin": "^1.6.1",
     "html-webpack-plugin": "^3.1.0",
