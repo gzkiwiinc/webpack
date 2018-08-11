@@ -5,7 +5,7 @@
   "author": "{{ author }}",
   "private": true,
   "scripts": {
-    "dev": "webpack-dev-server --inline --progress --config ./node_modules/mesh-dev-cli/src/commands/buildConfig/webpack.dev.conf.js",
+    "dev": "webpack-dev-server --inline --progress --config ./node_modules/mesh-dev-cli/bld/commands/buildConfig/webpack.dev.conf.js",
     "start": "npm run dev",
     "build": "mesh build webview",
     "build:prod": "mesh build -p",
