@@ -18,7 +18,7 @@
 	  "suppressResultsExplorerNotice": false,
 	  "suppressShowKeyBindingsNotice": true
 	},
-	"editor.formatOnSave": true,
+	"editor.formatOnSave": false,
 	"[yaml]": {
 	  "editor.insertSpaces": false,
 	  "editor.tabSize": 4,

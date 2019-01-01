@@ -9,7 +9,7 @@
   </div>
 </template>
 
-<script>
+<script lang="ts">
 {{#unless router}}
 import HelloWorld from './components/HelloWorld'
 
@@ -22,7 +22,7 @@ export default {
 }
 </script>
 
-<style>
+<style lang="postcss" module>
 #app {
   font-family: 'Avenir', Helvetica, Arial, sans-serif;
   -webkit-font-smoothing: antialiased;
